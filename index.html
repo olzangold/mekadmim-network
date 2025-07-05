@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)file:///C:/Users/Olzan/Downloads/mekadmim_network%20(2).html -->
+<html lang="he" dir="rtl"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="רשת אינטראקטיבית של קטגוריות מקדמים - תצוגה גרפית של מבנה היררכי">
+    <meta name="keywords" content="רשת, קטגוריות, מקדמים, תצוגה גרפית, אינטראקטיבי">
+    <meta name="author" content="Network Visualization">
+    <title>רשת קטגוריות מקדמים - Mekadmim Network</title>
+    
+    <!-- Preload D3.js for better performance -->
+    <link rel="preload" href="./רשת קטגוריות מקדמים - Mekadmim Network_2_files/d3.min.js.download" as="script">
+    
+    <!-- Open Graph meta tags for social sharing -->
+    <meta property="og:title" content="רשת קטגוריות מקדמים">
+    <meta property="og:description" content="תצוגה אינטראקטיבית של מבנה היררכי של קטגוריות מקדמים">
+    <meta property="og:type" content="website">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 100 100&#39;&gt;&lt;circle cx=&#39;50&#39; cy=&#39;50&#39; r=&#39;40&#39; fill=&#39;%23007bff&#39;/&gt;&lt;/svg&gt;">
+    
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .controls button {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            min-width: 120px;
+        }
+        
+        .controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        
+        .controls button:active {
+            transform: translateY(0);
+        }
+        
+        .controls button.active {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        }
+        
+        #network {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Node styles */
+        .node-main {
+            fill: #e74c3c;
+            stroke: #fff;
+            stroke-width: 3px;
+            filter: drop-shadow(0 2px 6px rgba(231, 76, 60, 0.3));
+            cursor: pointer;
+        }
+        
+        .node-main:hover {
+            fill: #c0392b;
+            stroke-width: 4px;
+        }
+        
+        .node-sub {
+            fill: #1abc9c;
+            stroke: #fff;
+            stroke-width: 2px;
+            filter: drop-shadow(0 2px 4px rgba(26, 188, 156, 0.3));
+            cursor: pointer;
+        }
+        
+        .node-sub:hover {
+            fill: #16a085;
+            stroke-width: 3px;
+        }
+        
+        .node-code {
+            fill: #3498db;
+            stroke: #fff;
+            stroke-width: 2px;
+            filter: drop-shadow(0 1px 3px rgba(52, 152, 219, 0.3));
+            cursor: pointer;
+        }
+        
+        .node-code:hover {
+            fill: #2980b9;
+            stroke-width: 3px;
+        }
+        
+        .link {
+            stroke: #bdc3c7;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+            transition: stroke-opacity 0.3s ease;
+        }
+        
+        .link:hover {
+            stroke-opacity: 1;
+        }
+        
+        .node-label {
+            font-family: Arial, sans-serif;
+            font-weight: 600;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            pointer-events: none;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 250px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            line-height: 1.4;
+        }
+        
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(44, 62, 80, 0.95) transparent transparent transparent;
+        }
+        
+        .legend {
+            margin-top: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            padding: 20px;
+            background: rgba(248, 249, 250, 0.8);
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2980b9;
+        }
+        
+        .instructions ul {
+            margin-right: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .controls button {
+                width: 200px;
+            }
+            
+            #network {
+                height: 500px;
+            }
+            
+            .legend {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+        }
+        
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .container {
+                background: white;
+                box-shadow: none;
+            }
+            
+            .controls {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>רשת קטגוריות מקדמים</h1>
+        <p class="subtitle">תצוגה אינטראקטיבית של מבנה היררכי</p>
+        
+        <div class="controls">
+            <button id="resetBtn" title="איפוס מיקום כל הצמתים">🔄 איפוס מיקום</button>
+            <button id="centerBtn" title="מרכז את התצוגה">🎯 מרכז התצוגה</button>
+            <button id="toggleLabelsBtn" title="הצג או הסתר תוויות טקסט">🏷️ הצג/הסתר תוויות</button>
+            <button id="zoomInBtn" title="התקרב לתצוגה">🔍 התקרב</button>
+            <button id="zoomOutBtn" title="התרחק מהתצוגה">🔎 התרחק</button>
+            <button id="fitBtn" title="התאם את הרשת לגודל המסך">📐 התאם לגודל</button>
+        </div>
+        
+        <div id="network">
+            <div class="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>טוען את הרשת...</p>
+            </div>
+        <svg width="1160" height="600"><g transform="translate(198.60444431800715,118.32759218986902) scale(0.6597539553864471)"><g><line class="link" x1="376.51059162999394" y1="336.5818260393228" x2="291.0474196636284" y2="240.5623260567726"></line><line class="link" x1="376.51059162999394" y1="336.5818260393228" x2="481.90862665886544" y2="259.5687789733428"></line><line class="link" x1="376.51059162999394" y1="336.5818260393228" x2="322.49687603401065" y2="456.7694941166301"></line><line class="link" x1="551.7595461731394" y1="80.56066500726463" x2="533.1009441766665" y2="-37.88349796244278"></line><line class="link" x1="551.7595461731394" y1="80.56066500726463" x2="677.0199598350509" y2="45.82811654792363"></line><line class="link" x1="551.7595461731394" y1="80.56066500726463" x2="436.46287189235835" y2="127.60571383595862"></line><line class="link" x1="601.2256282011735" y1="356.6004726323477" x2="648.4895496545811" y2="225.15813543788659"></line><line class="link" x1="601.2256282011735" y1="356.6004726323477" x2="674.5176102280227" y2="479.8589482268521"></line><line class="link" x1="601.2256282011735" y1="356.6004726323477" x2="481.20601140266695" y2="425.4284392696673"></line><line class="link" x1="729.232909560933" y1="407.66788290894704" x2="831.8679445574307" y2="303.0282260230628"></line><line class="link" x1="729.232909560933" y1="407.66788290894704" x2="633.0559952027825" y2="542.1454799573079"></line><line class="link" x1="729.232909560933" y1="407.66788290894704" x2="751.5117347154007" y2="265.7788195270236"></line><line class="link" x1="729.232909560933" y1="407.66788290894704" x2="855.9894554405586" y2="436.90349515634966"></line><line class="link" x1="729.232909560933" y1="407.66788290894704" x2="593.9919199711107" y2="452.8068699132102"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="323.3296772980878" y2="151.19234037164523"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="218.46526803000572" y2="295.62102299015214"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="216.38243867382425" y2="193.41999389896844"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="246.74604692194538" y2="160.13296834092444"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="247.99662399646328" y2="324.3923059261224"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="283.80344202846493" y2="145.08589487043938"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="287.4488930955589" y2="330.96434433798805"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="203.3859261697062" y2="246.7221192920634"></line><line class="link" x1="291.0474196636284" y1="240.5623260567726" x2="352.38625194999673" y2="179.3146650873979"></line><line class="link" x1="481.90862665886544" y1="259.5687789733428" x2="547.2721056084098" y2="200.5182789986945"></line><line class="link" x1="322.49687603401065" y1="456.7694941166301" x2="315.42052579235366" y2="541.8614082453298"></line><line class="link" x1="533.1009441766665" y1="-37.88349796244278" x2="618.0382315370734" y2="-68.72999001558745"></line><line class="link" x1="533.1009441766665" y1="-37.88349796244278" x2="449.23444540019847" y2="-6.817693506975302"></line><line class="link" x1="533.1009441766665" y1="-37.88349796244278" x2="564.7526514409085" y2="-111.75847401914301"></line><line class="link" x1="533.1009441766665" y1="-37.88349796244278" x2="621.4332797894548" y2="-22.607866895765454"></line><line class="link" x1="533.1009441766665" y1="-37.88349796244278" x2="450.0544148657528" y2="-60.715931558059346"></line><line class="link" x1="677.0199598350509" y1="45.82811654792363" x2="757.4494801204814" y2="14.232077334358502"></line><line class="link" x1="436.46287189235835" y1="127.60571383595862" x2="409.7272829519931" y2="208.1864893773372"></line><line class="link" x1="648.4895496545811" y1="225.15813543788659" x2="692.5168320307199" y2="142.8015591038605"></line><line class="link" x1="674.5176102280227" y1="479.8589482268521" x2="735.5626068177685" y2="554.5335520779904"></line><line class="link" x1="674.5176102280227" y1="479.8589482268521" x2="698.5678328531947" y2="572.6911604887229"></line><line class="link" x1="674.5176102280227" y1="479.8589482268521" x2="759.4817387132614" y2="514.8366637735787"></line><line class="link" x1="481.20601140266695" y1="425.4284392696673" x2="421.0218644154824" y2="499.88069599511283"></line><line class="link" x1="831.8679445574307" y1="303.0282260230628" x2="841.6582866863722" y2="209.11531726911625"></line><line class="link" x1="831.8679445574307" y1="303.0282260230628" x2="908.0819020631843" y2="246.68682002332702"></line><line class="link" x1="831.8679445574307" y1="303.0282260230628" x2="921.8960120212138" y2="290.8168847758468"></line><line class="link" x1="831.8679445574307" y1="303.0282260230628" x2="880.7723795482797" y2="217.46591849790357"></line><line class="link" x1="633.0559952027825" y1="542.1454799573079" x2="614.9144452461225" y2="635.2941446003774"></line><line class="link" x1="633.0559952027825" y1="542.1454799573079" x2="546.5758566690306" y2="594.8267453211727"></line><line class="link" x1="633.0559952027825" y1="542.1454799573079" x2="664.6211134327058" y2="631.0847727613389"></line><line class="link" x1="633.0559952027825" y1="542.1454799573079" x2="576.053561623146" y2="621.8573269572898"></line><line class="link" x1="633.0559952027825" y1="542.1454799573079" x2="537.6341216461631" y2="555.8440524232308"></line><line class="link" x1="751.5117347154007" y1="265.7788195270236" x2="797.3071065357755" y2="178.22761116786538"></line><line class="link" x1="751.5117347154007" y1="265.7788195270236" x2="756.9835386653451" y2="170.0613777380851"></line><line class="link" x1="855.9894554405586" y1="436.90349515634966" x2="942.0065816844952" y2="429.3097383716826"></line><line class="link" x1="855.9894554405586" y1="436.90349515634966" x2="848.3167233297061" y2="526.7670684487387"></line><line class="link" x1="855.9894554405586" y1="436.90349515634966" x2="918.8794365138984" y2="374.96681524641957"></line><line class="link" x1="855.9894554405586" y1="436.90349515634966" x2="905.504093966652" y2="507.6183468208222"></line><line class="link" x1="593.9919199711107" y1="452.8068699132102" x2="506.9435558400383" y2="499.35384185227343"></line></g><g><circle r="20" class="node-main" cx="376.51059162999394" cy="336.5818260393228"></circle><circle r="20" class="node-main" cx="551.7595461731394" cy="80.56066500726463"></circle><circle r="20" class="node-main" cx="601.2256282011735" cy="356.6004726323477"></circle><circle r="20" class="node-main" cx="729.232909560933" cy="407.66788290894704"></circle><circle r="15" class="node-sub" cx="291.0474196636284" cy="240.5623260567726"></circle><circle r="15" class="node-sub" cx="481.90862665886544" cy="259.5687789733428"></circle><circle r="15" class="node-sub" cx="322.49687603401065" cy="456.7694941166301"></circle><circle r="15" class="node-sub" cx="533.1009441766665" cy="-37.88349796244278"></circle><circle r="15" class="node-sub" cx="677.0199598350509" cy="45.82811654792363"></circle><circle r="15" class="node-sub" cx="436.46287189235835" cy="127.60571383595862"></circle><circle r="15" class="node-sub" cx="648.4895496545811" cy="225.15813543788659"></circle><circle r="15" class="node-sub" cx="674.5176102280227" cy="479.8589482268521"></circle><circle r="15" class="node-sub" cx="481.20601140266695" cy="425.4284392696673"></circle><circle r="15" class="node-sub" cx="831.8679445574307" cy="303.0282260230628"></circle><circle r="15" class="node-sub" cx="633.0559952027825" cy="542.1454799573079"></circle><circle r="15" class="node-sub" cx="751.5117347154007" cy="265.7788195270236"></circle><circle r="15" class="node-sub" cx="855.9894554405586" cy="436.90349515634966"></circle><circle r="15" class="node-sub" cx="593.9919199711107" cy="452.8068699132102"></circle><circle r="10" class="node-code" cx="323.3296772980878" cy="151.19234037164523"></circle><circle r="10" class="node-code" cx="218.46526803000572" cy="295.62102299015214"></circle><circle r="10" class="node-code" cx="216.38243867382425" cy="193.41999389896844"></circle><circle r="10" class="node-code" cx="246.74604692194538" cy="160.13296834092444"></circle><circle r="10" class="node-code" cx="247.99662399646328" cy="324.3923059261224"></circle><circle r="10" class="node-code" cx="283.80344202846493" cy="145.08589487043938"></circle><circle r="10" class="node-code" cx="287.4488930955589" cy="330.96434433798805"></circle><circle r="10" class="node-code" cx="203.3859261697062" cy="246.7221192920634"></circle><circle r="10" class="node-code" cx="352.38625194999673" cy="179.3146650873979"></circle><circle r="10" class="node-code" cx="547.2721056084098" cy="200.5182789986945"></circle><circle r="10" class="node-code" cx="315.42052579235366" cy="541.8614082453298"></circle><circle r="10" class="node-code" cx="618.0382315370734" cy="-68.72999001558745"></circle><circle r="10" class="node-code" cx="449.23444540019847" cy="-6.817693506975302"></circle><circle r="10" class="node-code" cx="564.7526514409085" cy="-111.75847401914301"></circle><circle r="10" class="node-code" cx="621.4332797894548" cy="-22.607866895765454"></circle><circle r="10" class="node-code" cx="450.0544148657528" cy="-60.715931558059346"></circle><circle r="10" class="node-code" cx="757.4494801204814" cy="14.232077334358502"></circle><circle r="10" class="node-code" cx="409.7272829519931" cy="208.1864893773372"></circle><circle r="10" class="node-code" cx="692.5168320307199" cy="142.8015591038605"></circle><circle r="10" class="node-code" cx="735.5626068177685" cy="554.5335520779904"></circle><circle r="10" class="node-code" cx="698.5678328531947" cy="572.6911604887229"></circle><circle r="10" class="node-code" cx="759.4817387132614" cy="514.8366637735787"></circle><circle r="10" class="node-code" cx="421.0218644154824" cy="499.88069599511283"></circle><circle r="10" class="node-code" cx="841.6582866863722" cy="209.11531726911625"></circle><circle r="10" class="node-code" cx="908.0819020631843" cy="246.68682002332702"></circle><circle r="10" class="node-code" cx="921.8960120212138" cy="290.8168847758468"></circle><circle r="10" class="node-code" cx="880.7723795482797" cy="217.46591849790357"></circle><circle r="10" class="node-code" cx="614.9144452461225" cy="635.2941446003774"></circle><circle r="10" class="node-code" cx="546.5758566690306" cy="594.8267453211727"></circle><circle r="10" class="node-code" cx="664.6211134327058" cy="631.0847727613389"></circle><circle r="10" class="node-code" cx="576.053561623146" cy="621.8573269572898"></circle><circle r="10" class="node-code" cx="537.6341216461631" cy="555.8440524232308"></circle><circle r="10" class="node-code" cx="797.3071065357755" cy="178.22761116786538"></circle><circle r="10" class="node-code" cx="756.9835386653451" cy="170.0613777380851"></circle><circle r="10" class="node-code" cx="942.0065816844952" cy="429.3097383716826"></circle><circle r="10" class="node-code" cx="848.3167233297061" cy="526.7670684487387"></circle><circle r="10" class="node-code" cx="918.8794365138984" cy="374.96681524641957"></circle><circle r="10" class="node-code" cx="905.504093966652" cy="507.6183468208222"></circle><circle r="10" class="node-code" cx="506.9435558400383" cy="499.35384185227343"></circle></g><g><text class="node-label" x="376.51059162999394" y="336.5818260393228" style="font-size: 14px;">רופא</text><text class="node-label" x="551.7595461731394" y="80.56066500726463" style="font-size: 14px;">חולה</text><text class="node-label" x="601.2256282011735" y="356.6004726323477" style="font-size: 14px;">יחסי רופא חולה</text><text class="node-label" x="729.232909560933" y="407.66788290894704" style="font-size: 14px;">המערכת</text><text class="node-label" x="291.0474196636284" y="240.5623260567726" style="font-size: 12px;">מאפיינים מקצועיים</text><text class="node-label" x="481.90862665886544" y="259.5687789733428" style="font-size: 12px;">מנהלה</text><text class="node-label" x="322.49687603401065" y="456.7694941166301" style="font-size: 12px;">עם החולה</text><text class="node-label" x="533.1009441766665" y="-37.88349796244278" style="font-size: 12px;">מאפייני החולה</text><text class="node-label" x="677.0199598350509" y="45.82811654792363" style="font-size: 12px;">סוציו כלכלי</text><text class="node-label" x="436.46287189235835" y="127.60571383595862" style="font-size: 12px;">מאפייני המחלה</text><text class="node-label" x="648.4895496545811" y="225.15813543788659" style="font-size: 12px;">שיתוף בטיפול</text><text class="node-label" x="674.5176102280227" y="479.8589482268521" style="font-size: 12px;">יחס אישי רגשי</text><text class="node-label" x="481.20601140266695" y="425.4284392696673" style="font-size: 12px;">תקשורת</text><text class="node-label" x="831.8679445574307" y="303.0282260230628" style="font-size: 12px;">מנהלה</text><text class="node-label" x="633.0559952027825" y="542.1454799573079" style="font-size: 12px;">רפואי-מנהלה</text><text class="node-label" x="751.5117347154007" y="265.7788195270236" style="font-size: 12px;">טיפול במרפאה</text><text class="node-label" x="855.9894554405586" y="436.90349515634966" style="font-size: 12px;">רפואי</text><text class="node-label" x="593.9919199711107" y="452.8068699132102" style="font-size: 12px;">חינוך לבריאות</text><text class="node-label" x="323.3296772980878" y="151.19234037164523" style="font-size: 10px;">טיפול רב ממדי</text><text class="node-label" x="218.46526803000572" y="295.62102299015214" style="font-size: 10px;">רופא הלוקח אחריות</text><text class="node-label" x="216.38243867382425" y="193.41999389896844" style="font-size: 10px;">הסבר ולא הפחדה</text><text class="node-label" x="246.74604692194538" y="160.13296834092444" style="font-size: 10px;">גישה לא פטרנליסטית</text><text class="node-label" x="247.99662399646328" y="324.3923059261224" style="font-size: 10px;">גיוס החולה לטיפול</text><text class="node-label" x="283.80344202846493" y="145.08589487043938" style="font-size: 10px;">ראיון מוטיבציוני</text><text class="node-label" x="287.4488930955589" y="330.96434433798805" style="font-size: 10px;">התאמת הטיפול למטופל</text><text class="node-label" x="203.3859261697062" y="246.7221192920634" style="font-size: 10px;">גישה הדרגתית בטיפול</text><text class="node-label" x="352.38625194999673" y="179.3146650873979" style="font-size: 10px;">שימוש בהפחדה</text><text class="node-label" x="547.2721056084098" y="200.5182789986945" style="font-size: 10px;">קיום רציפות בטיפול</text><text class="node-label" x="315.42052579235366" y="541.8614082453298" style="font-size: 10px;">הכרות עם תרבות ואורח...</text><text class="node-label" x="618.0382315370734" y="-68.72999001558745" style="font-size: 10px;">חשיפה למידע ורכישת י...</text><text class="node-label" x="449.23444540019847" y="-6.817693506975302" style="font-size: 10px;">אופי מקדם היענות</text><text class="node-label" x="564.7526514409085" y="-111.75847401914301" style="font-size: 10px;">מודעות למחלה ולסיבוכ...</text><text class="node-label" x="621.4332797894548" y="-22.607866895765454" style="font-size: 10px;">תמיכה מהמשפחה</text><text class="node-label" x="450.0544148657528" y="-60.715931558059346" style="font-size: 10px;">רצון לשיפור הבריאות</text><text class="node-label" x="757.4494801204814" y="14.232077334358502" style="font-size: 10px;">רמת השכלה</text><text class="node-label" x="409.7272829519931" y="208.1864893773372" style="font-size: 10px;">חשש מסיבוכים</text><text class="node-label" x="692.5168320307199" y="142.8015591038605" style="font-size: 10px;">שיתוף החולה בתהליך</text><text class="node-label" x="735.5626068177685" y="554.5335520779904" style="font-size: 10px;">אמון ברופא ובחולה</text><text class="node-label" x="698.5678328531947" y="572.6911604887229" style="font-size: 10px;">חיזוק ותמיכה בחולה</text><text class="node-label" x="759.4817387132614" y="514.8366637735787" style="font-size: 10px;">חיזוק יכולות החולה</text><text class="node-label" x="421.0218644154824" y="499.88069599511283" style="font-size: 10px;">תקשורת עם החולה</text><text class="node-label" x="841.6582866863722" y="209.11531726911625" style="font-size: 10px;">הגדלת זמני מעקב וטיפ...</text><text class="node-label" x="908.0819020631843" y="246.68682002332702" style="font-size: 10px;">תפקיד מנהלן</text><text class="node-label" x="921.8960120212138" y="290.8168847758468" style="font-size: 10px;">טכנולוגיה</text><text class="node-label" x="880.7723795482797" y="217.46591849790357" style="font-size: 10px;">מערכת מידע</text><text class="node-label" x="614.9144452461225" y="635.2941446003774" style="font-size: 10px;">רופא ראשוני עם מומחה</text><text class="node-label" x="546.5758566690306" y="594.8267453211727" style="font-size: 10px;">תמריצים</text><text class="node-label" x="664.6211134327058" y="631.0847727613389" style="font-size: 10px;">קידום רשומות רפואיות</text><text class="node-label" x="576.053561623146" y="621.8573269572898" style="font-size: 10px;">מדיניות הקופה</text><text class="node-label" x="537.6341216461631" y="555.8440524232308" style="font-size: 10px;">מדיניות הכללית</text><text class="node-label" x="797.3071065357755" y="178.22761116786538" style="font-size: 10px;">עבודת צוות בין גורמי...</text><text class="node-label" x="756.9835386653451" y="170.0613777380851" style="font-size: 10px;">אחות סוכרת</text><text class="node-label" x="942.0065816844952" y="429.3097383716826" style="font-size: 10px;">הכשרות לצוות</text><text class="node-label" x="848.3167233297061" y="526.7670684487387" style="font-size: 10px;">הדרכות למטופלים</text><text class="node-label" x="918.8794365138984" y="374.96681524641957" style="font-size: 10px;">דיאטנית לחולי סוכרת</text><text class="node-label" x="905.504093966652" y="507.6183468208222" style="font-size: 10px;">תמיכה בתוכניות מבוסס...</text><text class="node-label" x="506.9435558400383" y="499.35384185227343" style="font-size: 10px;">חינוך לבריאות</text></g></g></svg></div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #e74c3c;"></div>
+                <span>קטגוריות עיקריות (4)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #1abc9c;"></div>
+                <span>קטגוריות משנה (15)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #3498db;"></div>
+                <span>קודים מקדמים (39)</span>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>🎮 הוראות שימוש:</h3>
+            <ul>
+                <li><strong>גרירה:</strong> לחץ וגרור צמתים כדי לסדר אותם</li>
+                <li><strong>זום:</strong> השתמש בגלגל העכבר או בכפתורי הזום</li>
+                <li><strong>מידע:</strong> העבר עכבר מעל צמתים לקבלת מידע נוסף</li>
+                <li><strong>ניווט:</strong> גרור את הרקע כדי לנווט ברשת</li>
+                <li><strong>איפוס:</strong> השתמש בכפתור "איפוס מיקום" כדי לשחרר צמתים קבועים</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="./רשת קטגוריות מקדמים - Mekadmim Network_2_files/d3.min.js.download"></script>
+    <script>
+        // Hide loading indicator once D3 is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Performance optimization: defer network creation
+            setTimeout(createNetwork, 100);
+        });
+
+        function createNetwork() {
+            // Hide loading indicator
+            document.querySelector('.loading').style.display = 'none';
+            
+            // Create the data structure for the network
+            const data = {
+                "רופא": {
+                    "מאפיינים מקצועיים": ["טיפול רב ממדי", "רופא הלוקח אחריות", "הסבר ולא הפחדה", "גישה לא פטרנליסטית", "גיוס החולה לטיפול", "ראיון מוטיבציוני", "התאמת הטיפול למטופל", "גישה הדרגתית בטיפול", "שימוש בהפחדה"],
+                    "מנהלה": ["קיום רציפות בטיפול"],
+                    "עם החולה": ["הכרות עם תרבות ואורח חיים"]
+                },
+                "חולה": {
+                    "מאפייני החולה": ["חשיפה למידע ורכישת ידע", "אופי מקדם היענות", "מודעות למחלה ולסיבוכיה", "תמיכה מהמשפחה", "רצון לשיפור הבריאות"],
+                    "סוציו כלכלי": ["רמת השכלה"],
+                    "מאפייני המחלה": ["חשש מסיבוכים"]
+                },
+                "יחסי רופא חולה": {
+                    "שיתוף בטיפול": ["שיתוף החולה בתהליך"],
+                    "יחס אישי רגשי": ["אמון ברופא ובחולה", "חיזוק ותמיכה בחולה", "חיזוק יכולות החולה"],
+                    "תקשורת": ["תקשורת עם החולה"]
+                },
+                "המערכת": {
+                    "מנהלה": ["הגדלת זמני מעקב וטיפול", "תפקיד מנהלן", "טכנולוגיה", "מערכת מידע"],
+                    "רפואי-מנהלה": ["רופא ראשוני עם מומחה", "תמריצים", "קידום רשומות רפואיות", "מדיניות הקופה", "מדיניות הכללית"],
+                    "טיפול במרפאה": ["עבודת צוות בין גורמי הטיפול", "אחות סוכרת"],
+                    "רפואי": ["הכשרות לצוות", "הדרכות למטופלים", "דיאטנית לחולי סוכרת", "תמיכה בתוכניות מבוססות ראיה"],
+                    "חינוך לבריאות": ["חינוך לבריאות"]
+                }
+            };
+
+            // Create nodes and links
+            const nodes = [];
+            const links = [];
+            let nodeId = 0;
+
+            // Create main category nodes
+            Object.keys(data).forEach(mainCat => {
+                nodes.push({
+                    id: nodeId++,
+                    label: mainCat,
+                    type: 'main',
+                    level: 0
+                });
+            });
+
+            // Create subcategory nodes and links
+            Object.keys(data).forEach((mainCat, mainIndex) => {
+                Object.keys(data[mainCat]).forEach(subCat => {
+                    const subNodeId = nodeId++;
+                    nodes.push({
+                        id: subNodeId,
+                        label: subCat,
+                        type: 'sub',
+                        level: 1,
+                        parent: mainCat
+                    });
+                    
+                    // Link to main category
+                    links.push({
+                        source: mainIndex,
+                        target: subNodeId
+                    });
+                });
+            });
+
+            // Create code nodes and links
+            Object.keys(data).forEach((mainCat, mainIndex) => {
+                Object.keys(data[mainCat]).forEach(subCat => {
+                    const subNodeIndex = nodes.findIndex(n => n.label === subCat && n.parent === mainCat);
+                    
+                    data[mainCat][subCat].forEach(code => {
+                        const codeNodeId = nodeId++;
+                        nodes.push({
+                            id: codeNodeId,
+                            label: code,
+                            type: 'code',
+                            level: 2,
+                            parent: subCat,
+                            grandParent: mainCat
+                        });
+                        
+                        // Link to subcategory
+                        links.push({
+                            source: subNodeIndex,
+                            target: codeNodeId
+                        });
+                    });
+                });
+            });
+
+            // Set up the SVG with zoom and pan
+            const width = 1160;
+            const height = 600;
+            
+            const svg = d3.select("#network")
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height);
+
+            // Create zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on("zoom", function(event) {
+                    container.attr("transform", event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Create a container for all network elements
+            const container = svg.append("g");
+
+            // Create tooltip
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            // Create force simulation with more stable parameters
+            const simulation = d3.forceSimulation(nodes)
+                .force("link", d3.forceLink(links).id(d => d.id)
+                    .distance(d => {
+                        if (d.source.type === 'main') return 120;
+                        if (d.source.type === 'sub') return 80;
+                        return 50;
+                    })
+                    .strength(0.8))
+                .force("charge", d3.forceManyBody().strength(d => {
+                    if (d.type === 'main') return -800;
+                    if (d.type === 'sub') return -400;
+                    return -200;
+                }))
+                .force("center", d3.forceCenter(width / 2, height / 2))
+                .force("collision", d3.forceCollide().radius(d => {
+                    if (d.type === 'main') return 30;
+                    if (d.type === 'sub') return 25;
+                    return 20;
+                }).strength(0.9))
+                .force("x", d3.forceX(width / 2).strength(0.1))
+                .force("y", d3.forceY(height / 2).strength(0.1))
+                .alphaDecay(0.02);
+
+            // Create links
+            const link = container.append("g")
+                .selectAll("line")
+                .data(links)
+                .enter().append("line")
+                .attr("class", "link");
+
+            // Create nodes
+            const node = container.append("g")
+                .selectAll("circle")
+                .data(nodes)
+                .enter().append("circle")
+                .attr("r", d => {
+                    if (d.type === 'main') return 20;
+                    if (d.type === 'sub') return 15;
+                    return 10;
+                })
+                .attr("class", d => `node-${d.type}`)
+                .call(d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended))
+                .on("mouseover", function(event, d) {
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                    
+                    let tooltipText = `<strong>${d.label}</strong><br/>`;
+                    if (d.type === 'main') {
+                        tooltipText += 'סוג: קטגוריה עיקרית';
+                    } else if (d.type === 'sub') {
+                        tooltipText += `סוג: קטגוריית משנה<br/>שייך ל: ${d.parent}`;
+                    } else {
+                        tooltipText += `סוג: קוד מקדם<br/>שייך ל: ${d.parent}<br/>קטגוריה עיקרית: ${d.grandParent}`;
+                    }
+                    
+                    tooltip.html(tooltipText)
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            // Add labels
+            let showLabels = true;
+            const labels = container.append("g")
+                .selectAll("text")
+                .data(nodes)
+                .enter().append("text")
+                .attr("class", "node-label")
+                .text(d => {
+                    if (d.type === 'main') return d.label;
+                    if (d.type === 'sub') return d.label;
+                    return d.label.length > 20 ? d.label.substring(0, 20) + '...' : d.label;
+                })
+                .style("font-size", d => {
+                    if (d.type === 'main') return '14px';
+                    if (d.type === 'sub') return '12px';
+                    return '10px';
+                });
+
+            // Update positions on simulation tick
+            simulation.on("tick", () => {
+                link
+                    .attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+
+                labels
+                    .attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            });
+
+            // Drag functions - improved stability
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.1).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                // Keep the node fixed after dragging for better control
+                // d.fx = null;
+                // d.fy = null;
+            }
+
+            // Control buttons
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                nodes.forEach(d => {
+                    d.fx = null;
+                    d.fy = null;
+                });
+                simulation.alpha(0.5).restart();
+            });
+
+            document.getElementById('centerBtn').addEventListener('click', () => {
+                // Reset zoom and center the view
+                svg.transition().duration(750).call(
+                    zoom.transform,
+                    d3.zoomIdentity.translate(0, 0).scale(1)
+                );
+                simulation.force("center", d3.forceCenter(width / 2, height / 2));
+                simulation.alpha(0.3).restart();
+            });
+
+            document.getElementById('toggleLabelsBtn').addEventListener('click', () => {
+                showLabels = !showLabels;
+                labels.style("display", showLabels ? "block" : "none");
+                document.getElementById('toggleLabelsBtn').textContent = showLabels ? "🏷️ הסתר תוויות" : "🏷️ הצג תוויות";
+            });
+
+            document.getElementById('zoomInBtn').addEventListener('click', () => {
+                svg.transition().duration(300).call(
+                    zoom.scaleBy, 1.5
+                );
+            });
+
+            document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                svg.transition().duration(300).call(
+                    zoom.scaleBy, 1 / 1.5
+                );
+            });
+
+            document.getElementById('fitBtn').addEventListener('click', () => {
+                // Calculate bounds of all nodes
+                const bounds = container.node().getBBox();
+                const fullWidth = width;
+                const fullHeight = height;
+                const widthScale = fullWidth / bounds.width;
+                const heightScale = fullHeight / bounds.height;
+                const scale = Math.min(widthScale, heightScale) * 0.9;
+                const translate = [fullWidth / 2 - scale * (bounds.x + bounds.width / 2), 
+                                 fullHeight / 2 - scale * (bounds.y + bounds.height / 2)];
+                
+                svg.transition().duration(750).call(
+                    zoom.transform,
+                    d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+                );
+            });
+        }
+
+        // Error handling for D3 loading
+        window.addEventListener('error', function(e) {
+            if (e.message.includes('d3')) {
+                document.querySelector('.loading p').textContent = 'שגיאה בטעינת הרשת. אנא רענן את הדף.';
+                document.querySelector('.loading-spinner').style.display = 'none';
+            }
+        });
+    </script>
+
+<div class="tooltip" style="opacity: 0; left: 1116px; top: 305px;"><strong>מאפייני החולה</strong><br>סוג: קטגוריית משנה<br>שייך ל: חולה</div></body></html>
